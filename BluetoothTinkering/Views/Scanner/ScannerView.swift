@@ -44,8 +44,7 @@ struct ScannerView: View {
     private var peripheralList: some View {
         List(viewModel.filteredPeripherals) { peripheral in
             NavigationLink {
-                // Placeholder for DeviceDetailView (Task 12)
-                Text("Device Detail: \(peripheral.displayName)")
+                DeviceDetailView(peripheral: peripheral)
             } label: {
                 PeripheralRow(peripheral: peripheral)
             }
