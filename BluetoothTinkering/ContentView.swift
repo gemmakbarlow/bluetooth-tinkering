@@ -1,31 +1,26 @@
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(BluetoothManager.self) private var bluetoothManager
+
     var body: some View {
         TabView {
-            Text("Scanner")
-                .tabItem {
-                    Label("Scanner", systemImage: "antenna.radiowaves.left.and.right")
-                }
-
-            Text("Accessory Setup")
-                .tabItem {
-                    Label("Setup", systemImage: "plus.circle")
-                }
-
-            Text("Background Monitor")
-                .tabItem {
-                    Label("Monitor", systemImage: "eye")
-                }
-
-            Text("Dashboard")
-                .tabItem {
-                    Label("Dashboard", systemImage: "chart.bar")
-                }
+            Tab("Scanner", systemImage: "antenna.radiowaves.left.and.right") {
+                ScannerView()
+            }
+            Tab("Setup", systemImage: "square.and.arrow.down.on.square") {
+                AccessorySetupView()
+            }
+            Tab("Background", systemImage: "moon.fill") {
+                BackgroundMonitorView()
+            }
+            Tab("Dashboard", systemImage: "chart.line.uptrend.xyaxis") {
+                DashboardView()
+            }
+        }
+        .tint(.blue)
+        .overlay {
+            BluetoothStateOverlay(state: bluetoothManager.state)
         }
     }
-}
-
-#Preview {
-    ContentView()
 }
