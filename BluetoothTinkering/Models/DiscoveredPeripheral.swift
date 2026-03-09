@@ -1,7 +1,7 @@
 import CoreBluetooth
 import Foundation
 
-struct DiscoveredPeripheral: Identifiable {
+struct DiscoveredPeripheral: Identifiable, @unchecked Sendable {
     let id: UUID
     let peripheral: CBPeripheral?
     var name: String?

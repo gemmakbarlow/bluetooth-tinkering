@@ -6,9 +6,6 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXBuildFile section */
-/* End PBXBuildFile section */
-
 /* Begin PBXContainerItemProxy section */
 		A1B2C3D4E5F60001 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -20,20 +17,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		A1B2C3D4E5F60011 /* BluetoothTinkering.app */ = {
-			isa = PBXFileReference;
-			explicitFileType = wrapper.application;
-			includeInIndex = 0;
-			path = BluetoothTinkering.app;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		A1B2C3D4E5F60021 /* BluetoothTinkeringTests.xctest */ = {
-			isa = PBXFileReference;
-			explicitFileType = wrapper.cfbundle;
-			includeInIndex = 0;
-			path = BluetoothTinkeringTests.xctest;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
+		A1B2C3D4E5F60011 /* BluetoothTinkering.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BluetoothTinkering.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A1B2C3D4E5F60021 /* BluetoothTinkeringTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BluetoothTinkeringTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -42,7 +27,7 @@
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = A1B2C3D4E5F60010;
+			target = A1B2C3D4E5F60010 /* BluetoothTinkering */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -103,7 +88,7 @@
 /* Begin PBXNativeTarget section */
 		A1B2C3D4E5F60010 /* BluetoothTinkering */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A1B2C3D4E5F60060;
+			buildConfigurationList = A1B2C3D4E5F60060 /* Build configuration list for PBXNativeTarget "BluetoothTinkering" */;
 			buildPhases = (
 				A1B2C3D4E5F60050 /* Sources */,
 				A1B2C3D4E5F60030 /* Frameworks */,
@@ -125,7 +110,7 @@
 		};
 		A1B2C3D4E5F60020 /* BluetoothTinkeringTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A1B2C3D4E5F60061;
+			buildConfigurationList = A1B2C3D4E5F60061 /* Build configuration list for PBXNativeTarget "BluetoothTinkeringTests" */;
 			buildPhases = (
 				A1B2C3D4E5F60052 /* Sources */,
 				A1B2C3D4E5F60031 /* Frameworks */,
@@ -165,7 +150,7 @@
 					};
 				};
 			};
-			buildConfigurationList = A1B2C3D4E5F60062;
+			buildConfigurationList = A1B2C3D4E5F60062 /* Build configuration list for PBXProject "BluetoothTinkering" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -452,15 +437,6 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A1B2C3D4E5F60062 /* Build configuration list for PBXProject "BluetoothTinkering" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				A1B2C3D4E5F60100 /* Debug */,
-				A1B2C3D4E5F60101 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		A1B2C3D4E5F60060 /* Build configuration list for PBXNativeTarget "BluetoothTinkering" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -475,6 +451,15 @@
 			buildConfigurations = (
 				A1B2C3D4E5F60104 /* Debug */,
 				A1B2C3D4E5F60105 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A1B2C3D4E5F60062 /* Build configuration list for PBXProject "BluetoothTinkering" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A1B2C3D4E5F60100 /* Debug */,
+				A1B2C3D4E5F60101 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
