@@ -8,7 +8,7 @@ A showcase/portfolio iOS app demonstrating Bluetooth (BLE) capabilities in 2026 
 
 - **iOS 18+**, SwiftUI
 - **@Observable** macro (Swift Observation framework)
-- **CoreBluetooth** — no external dependencies
+- **CoreBluetooth** + **AccessorySetupKit** — no third-party dependencies
 - **Blue-themed UI** throughout
 
 ## Architecture
@@ -32,14 +32,16 @@ App (composition root)
  +-- creates BluetoothManager
  +-- creates all ViewModels with manager injected
      +-- .environment(scannerViewModel)
+     +-- .environment(accessorySetupViewModel)
      +-- .environment(backgroundViewModel)
      +-- .environment(dashboardViewModel)
          +-- ScannerTab -> @Environment(ScannerViewModel.self)
+         +-- AccessorySetupTab -> @Environment(AccessorySetupViewModel.self)
          +-- BackgroundTab -> @Environment(BackgroundViewModel.self)
          +-- DashboardTab -> @Environment(DashboardViewModel.self)
 ```
 
-## Features (3 Tabs)
+## Features (4 Tabs)
 
 ### Scanner Tab
 
@@ -50,6 +52,17 @@ App (composition root)
 - Tapping a device navigates (push) to Device Detail.
 - Scan auto-stops after 30 seconds with manual rescan option.
 - Empty state after reasonable scan duration.
+
+### Accessory Setup Tab (AccessorySetupKit)
+
+Demonstrates the modern iOS 18+ accessory onboarding experience using `AccessorySetupKit`:
+
+- **Picker UI:** Button to present the system accessory picker (`ASAccessorySession.showPicker`), showing nearby BLE accessories with product images and names.
+- **Discovery configuration:** Configurable `ASDiscoveryDescriptor` with Bluetooth service UUID and/or company identifier filtering.
+- **Session lifecycle:** Displays `ASAccessorySession` state and events (activated, accessory added, accessory removed).
+- **Previously paired accessories:** Lists accessories already associated with the app via `session.accessories`.
+- **Accessory management:** Rename and remove paired accessories.
+- **Comparison info:** Brief explanation contrasting AccessorySetupKit (modern, one-tap, privacy-first) with traditional CoreBluetooth scanning (manual, permission-heavy).
 
 ### Device Detail (pushed from Scanner)
 
@@ -89,6 +102,13 @@ App (composition root)
 - **Unauthorized:** prompt explaining permission requirement with Settings guidance.
 - **Unsupported:** message indicating no BLE support.
 - Reactive — UI updates immediately on state changes.
+
+### Accessory Setup
+
+- **Picker cancelled:** Handle user dismissing the picker without selecting.
+- **Discovery timeout:** Show message if no matching accessories found within timeout.
+- **Session activation failure:** Display error if session cannot be activated.
+- **No accessories configured:** Empty state explaining how AccessorySetupKit works and prompting to try the picker.
 
 ### Connection Lifecycle
 
@@ -140,6 +160,13 @@ All ViewModels tested via `MockBluetoothManager` conforming to `BluetoothManagin
 - Event log appending.
 - Log cap at 100 entries.
 - Background monitoring toggle.
+
+### AccessorySetupViewModel
+
+- Session event handling (accessory added, removed).
+- Accessories list reflects session state.
+- Picker presentation state management.
+- Error state handling (cancelled, timeout, activation failure).
 
 ### DashboardViewModel
 

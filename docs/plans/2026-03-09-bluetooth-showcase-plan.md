@@ -2,11 +2,11 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Build a 3-tab iOS app showcasing BLE capabilities (scanning, device interaction, background monitoring, live dashboard) using CoreBluetooth, SwiftUI, and the Swift Observation framework.
+**Goal:** Build a 4-tab iOS app showcasing BLE capabilities (scanning, accessory setup, background monitoring, live dashboard) using CoreBluetooth, AccessorySetupKit, SwiftUI, and the Swift Observation framework.
 
 **Architecture:** Single `BluetoothManager` (@Observable) wrapping CBCentralManager, injected into per-feature ViewModels via constructor injection. Views receive ViewModels from SwiftUI @Environment. MockBluetoothManager for tests and previews.
 
-**Tech Stack:** Swift, SwiftUI, CoreBluetooth, iOS 18+, @Observable macro, XCTest
+**Tech Stack:** Swift, SwiftUI, CoreBluetooth, AccessorySetupKit, iOS 18+, @Observable macro, XCTest
 
 ---
 
@@ -940,7 +940,231 @@ git commit -m "feat: add DashboardViewModel with mock data and live data support
 
 ---
 
-## Task 9: BluetoothManager (Real Implementation)
+## Task 9: AccessorySetupViewModel + Tests
+
+**Files:**
+- Create: `BluetoothTinkering/ViewModels/AccessorySetupViewModel.swift`
+- Create: `BluetoothTinkeringTests/ViewModels/AccessorySetupViewModelTests.swift`
+
+**Step 1: Write failing tests**
+
+```swift
+import XCTest
+@testable import BluetoothTinkering
+
+final class AccessorySetupViewModelTests: XCTestCase {
+
+    var sut: AccessorySetupViewModel!
+
+    override func setUp() {
+        sut = AccessorySetupViewModel()
+    }
+
+    func test_initialState_isNotActivated() {
+        XCTAssertFalse(sut.isSessionActive)
+    }
+
+    func test_accessories_initiallyEmpty() {
+        XCTAssertTrue(sut.accessories.isEmpty)
+    }
+
+    func test_isPickerPresented_initiallyFalse() {
+        XCTAssertFalse(sut.isPickerPresented)
+    }
+
+    func test_handleEvent_accessoryAdded_updatesAccessories() {
+        let accessory = MockASAccessory(displayName: "Test Device")
+        sut.handleAccessoryAdded(accessory)
+
+        XCTAssertEqual(sut.accessories.count, 1)
+        XCTAssertEqual(sut.accessories.first?.displayName, "Test Device")
+    }
+
+    func test_handleEvent_accessoryRemoved_updatesAccessories() {
+        let accessory = MockASAccessory(displayName: "Test Device")
+        sut.handleAccessoryAdded(accessory)
+        sut.handleAccessoryRemoved(accessory)
+
+        XCTAssertTrue(sut.accessories.isEmpty)
+    }
+
+    func test_error_setOnPickerCancellation() {
+        sut.handlePickerError(.pickerAlreadyActive)
+        XCTAssertNotNil(sut.error)
+    }
+
+    func test_error_setOnDiscoveryTimeout() {
+        sut.handlePickerError(.discoveryTimeout)
+        XCTAssertNotNil(sut.error)
+    }
+}
+```
+
+> **Note:** `ASAccessory` is a system class that cannot be directly instantiated in tests. The ViewModel will store lightweight `PairedAccessory` structs mapped from `ASAccessory`, and tests will exercise the mapping/state logic. The `MockASAccessory` helper and `PairedAccessory` struct will be created during implementation.
+
+**Step 2: Run tests — expect FAIL**
+
+**Step 3: Implement AccessorySetupViewModel**
+
+```swift
+import AccessorySetupKit
+import Foundation
+import Observation
+
+struct PairedAccessory: Identifiable {
+    let id: UUID
+    let displayName: String
+    let state: ASAccessory.AccessoryState
+
+    init(from accessory: ASAccessory) {
+        self.id = UUID()
+        self.displayName = accessory.displayName
+        self.state = accessory.state
+    }
+}
+
+enum AccessorySetupError: LocalizedError {
+    case activationFailed(String)
+    case pickerCancelled
+    case discoveryTimeout
+    case pickerAlreadyActive
+    case unknown(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .activationFailed(let msg): return "Session activation failed: \(msg)"
+        case .pickerCancelled: return "Accessory picker was cancelled."
+        case .discoveryTimeout: return "No matching accessories found. Make sure your device is nearby and in pairing mode."
+        case .pickerAlreadyActive: return "The accessory picker is already active."
+        case .unknown(let msg): return msg
+        }
+    }
+}
+
+@Observable
+final class AccessorySetupViewModel {
+    private var session: ASAccessorySession?
+
+    var accessories: [PairedAccessory] = []
+    var isSessionActive: Bool = false
+    var isPickerPresented: Bool = false
+    var error: AccessorySetupError?
+
+    init() {}
+
+    func activateSession() {
+        let session = ASAccessorySession()
+        self.session = session
+
+        session.activate(on: .main) { [weak self] event in
+            self?.handleEvent(event)
+        }
+        isSessionActive = true
+    }
+
+    func showPicker() {
+        guard let session else { return }
+        isPickerPresented = true
+        error = nil
+
+        let descriptor = ASDiscoveryDescriptor()
+        descriptor.bluetoothServiceUUID = CBUUID(string: "180D") // Heart Rate as example
+
+        let item = ASPickerDisplayItem(
+            name: "BLE Accessory",
+            productImage: UIImage(systemName: "sensor.tag.radiowaves.forward.fill")!,
+            descriptor: descriptor
+        )
+
+        session.showPicker(for: [item]) { [weak self] error in
+            self?.isPickerPresented = false
+            if let error {
+                self?.handlePickerError(error)
+            }
+        }
+    }
+
+    func removeAccessory(_ accessory: PairedAccessory) {
+        // Find the ASAccessory matching this PairedAccessory and remove it
+        // In practice, would call session?.removeAccessory(_:completionHandler:)
+        accessories.removeAll { $0.id == accessory.id }
+    }
+
+    func renameAccessory(_ accessory: PairedAccessory) {
+        // Would call session?.renameAccessory(_:options:completionHandler:)
+    }
+
+    // MARK: - Internal for testing
+
+    func handleAccessoryAdded(_ accessory: ASAccessory) {
+        let paired = PairedAccessory(from: accessory)
+        accessories.append(paired)
+    }
+
+    func handleAccessoryRemoved(_ accessory: ASAccessory) {
+        accessories.removeAll { $0.displayName == accessory.displayName }
+    }
+
+    func handlePickerError(_ error: ASAccessorySession.PickerError) {
+        switch error {
+        case .discoveryTimeout:
+            self.error = .discoveryTimeout
+        case .pickerAlreadyActive:
+            self.error = .pickerAlreadyActive
+        default:
+            self.error = .unknown(error.localizedDescription)
+        }
+    }
+
+    // Overload for test convenience
+    func handlePickerError(_ error: AccessorySetupError) {
+        self.error = error
+    }
+
+    private func handleEvent(_ event: ASAccessoryEvent) {
+        switch event.eventType {
+        case .activated:
+            isSessionActive = true
+            // Load previously paired accessories
+            if let session {
+                accessories = session.accessories.map { PairedAccessory(from: $0) }
+            }
+        case .accessoryAdded:
+            if let accessory = event.accessory {
+                handleAccessoryAdded(accessory)
+            }
+        case .accessoryRemoved:
+            if let accessory = event.accessory {
+                handleAccessoryRemoved(accessory)
+            }
+        case .accessoryChanged:
+            // Refresh the list
+            if let session {
+                accessories = session.accessories.map { PairedAccessory(from: $0) }
+            }
+        case .pickerDidDismiss:
+            isPickerPresented = false
+        default:
+            break
+        }
+    }
+}
+```
+
+> **Note:** `ASAccessorySession.PickerError` is the error type passed to the `showPicker` completion handler. The exact error cases should be verified against the AccessorySetupKit docs during implementation. The `handlePickerError` overloads allow both real errors and test-convenience errors.
+
+**Step 4: Run tests — expect PASS**
+
+**Step 5: Commit**
+
+```bash
+git add BluetoothTinkering/ViewModels/AccessorySetupViewModel.swift BluetoothTinkeringTests/
+git commit -m "feat: add AccessorySetupViewModel with session management and picker support"
+```
+
+---
+
+## Task 10: BluetoothManager (Real CoreBluetooth Implementation)
 
 **Files:**
 - Create: `BluetoothTinkering/Bluetooth/BluetoothManager.swift`
@@ -1210,7 +1434,7 @@ git commit -m "feat: add BluetoothManager wrapping CBCentralManager with delegat
 
 ---
 
-## Task 10: Scanner Views
+## Task 11: Scanner Views
 
 **Files:**
 - Create: `BluetoothTinkering/Views/Scanner/ScannerView.swift`
@@ -1251,7 +1475,7 @@ git commit -m "feat: add Scanner views with filtering, sorting, and signal indic
 
 ---
 
-## Task 11: Device Detail Views
+## Task 12: Device Detail Views
 
 **Files:**
 - Create: `BluetoothTinkering/Views/DeviceDetail/DeviceDetailView.swift`
@@ -1285,7 +1509,7 @@ git commit -m "feat: add Device Detail views with service/characteristic browsin
 
 ---
 
-## Task 12: Background Monitor Views
+## Task 13: Background Monitor Views
 
 **Files:**
 - Create: `BluetoothTinkering/Views/Background/BackgroundMonitorView.swift`
@@ -1324,7 +1548,7 @@ git commit -m "feat: add Background Monitor views with event log and info sectio
 
 ---
 
-## Task 13: Dashboard Views
+## Task 14: Dashboard Views
 
 **Files:**
 - Create: `BluetoothTinkering/Views/Dashboard/DashboardView.swift`
@@ -1373,7 +1597,44 @@ git commit -m "feat: add Dashboard views with line chart, mock data, and simulat
 
 ---
 
-## Task 14: Bluetooth State Overlay
+## Task 15: Accessory Setup Views
+
+**Files:**
+- Create: `BluetoothTinkering/Views/AccessorySetup/AccessorySetupView.swift`
+- Create: `BluetoothTinkering/Views/AccessorySetup/PairedAccessoryRow.swift`
+- Create: `BluetoothTinkering/Views/AccessorySetup/AccessorySetupInfoSection.swift`
+
+**Step 1: Create AccessorySetupInfoSection**
+
+A static info section explaining the difference between AccessorySetupKit and traditional CoreBluetooth:
+- **AccessorySetupKit (iOS 18+):** One-tap pairing via system picker, privacy-first (no broad Bluetooth permission needed), centralized accessory management in Settings.
+- **Traditional CoreBluetooth:** Manual scanning, requires Bluetooth permission upfront, app handles full discovery/connection lifecycle.
+
+**Step 2: Create PairedAccessoryRow**
+
+Row showing: accessory display name, state indicator (authorized/setup-complete), swipe actions for rename and remove.
+
+**Step 3: Create AccessorySetupView**
+
+- Info section at top explaining AccessorySetupKit
+- "Pair New Accessory" button that calls `showPicker()`
+- List of previously paired accessories (`PairedAccessoryRow`)
+- Empty state when no accessories paired: "No accessories paired yet. Tap 'Pair New Accessory' to get started."
+- Error alert displaying `AccessorySetupError` messages
+- Session auto-activates on view appear
+
+**Step 4: Verify builds and previews work**
+
+**Step 5: Commit**
+
+```bash
+git add BluetoothTinkering/Views/AccessorySetup/
+git commit -m "feat: add Accessory Setup views with picker, paired list, and info section"
+```
+
+---
+
+## Task 16: Bluetooth State Overlay
 
 **Files:**
 - Create: `BluetoothTinkering/Views/Common/BluetoothStateOverlay.swift`
@@ -1398,7 +1659,7 @@ git commit -m "feat: add Bluetooth state overlay for off/unauthorized/unsupporte
 
 ---
 
-## Task 15: App Composition Root & Tab Navigation
+## Task 17: App Composition Root & Tab Navigation
 
 **Files:**
 - Modify: `BluetoothTinkering/BluetoothTinkeringApp.swift`
@@ -1416,6 +1677,7 @@ struct BluetoothTinkeringApp: App {
     @State private var bluetoothManager = BluetoothManager()
     @State private var scannerViewModel: ScannerViewModel
     @State private var deviceDetailViewModel: DeviceDetailViewModel
+    @State private var accessorySetupViewModel = AccessorySetupViewModel()
     @State private var backgroundViewModel: BackgroundViewModel
     @State private var dashboardViewModel: DashboardViewModel
 
@@ -1433,6 +1695,7 @@ struct BluetoothTinkeringApp: App {
             ContentView()
                 .environment(scannerViewModel)
                 .environment(deviceDetailViewModel)
+                .environment(accessorySetupViewModel)
                 .environment(backgroundViewModel)
                 .environment(dashboardViewModel)
                 .environment(bluetoothManager)
@@ -1453,6 +1716,9 @@ struct ContentView: View {
         TabView {
             Tab("Scanner", systemImage: "antenna.radiowaves.left.and.right") {
                 ScannerView()
+            }
+            Tab("Setup", systemImage: "square.and.arrow.down.on.square") {
+                AccessorySetupView()
             }
             Tab("Background", systemImage: "moon.fill") {
                 BackgroundMonitorView()
@@ -1483,7 +1749,7 @@ git commit -m "feat: wire up composition root and tab navigation"
 
 ---
 
-## Task 16: Final Integration & Polish
+## Task 18: Final Integration & Polish
 
 **Step 1: Run all tests**
 
@@ -1497,8 +1763,9 @@ Iterate until clean.
 **Step 3: Build and run on simulator**
 
 Verify:
-- App launches with 3 tabs
+- App launches with 4 tabs
 - Scanner tab shows empty state (no BLE on simulator)
+- Accessory Setup tab shows info section and "Pair New Accessory" button
 - Bluetooth state overlay appears (simulator has no Bluetooth)
 - Dashboard mock data works with purple "Simulated Data" badge
 - Background monitor shows event log
@@ -1524,13 +1791,15 @@ git commit -m "feat: final integration and polish pass"
 | 6 | DeviceDetailViewModel + tests | Task 4 |
 | 7 | BackgroundViewModel + tests | Task 4 |
 | 8 | DashboardViewModel + tests | Task 4 |
-| 9 | BluetoothManager (real) | Task 3 |
-| 10 | Scanner views | Task 5 |
-| 11 | Device Detail views | Task 6 |
-| 12 | Background Monitor views | Task 7 |
-| 13 | Dashboard views | Task 8 |
-| 14 | Bluetooth state overlay | Task 3 |
-| 15 | App composition root & tabs | Tasks 10-14 |
-| 16 | Final integration & polish | Task 15 |
+| 9 | AccessorySetupViewModel + tests | Task 1 |
+| 10 | BluetoothManager (real) | Task 3 |
+| 11 | Scanner views | Task 5 |
+| 12 | Device Detail views | Task 6 |
+| 13 | Background Monitor views | Task 7 |
+| 14 | Dashboard views | Task 8 |
+| 15 | Accessory Setup views | Task 9 |
+| 16 | Bluetooth state overlay | Task 3 |
+| 17 | App composition root & tabs | Tasks 11-16 |
+| 18 | Final integration & polish | Task 17 |
 
-Tasks 5-8 can be parallelized. Tasks 10-14 can be parallelized.
+Tasks 5-9 can be parallelized. Tasks 11-16 can be parallelized.
