@@ -42,7 +42,9 @@ final class DashboardViewModel {
         useMockData = true
         mockTimer?.invalidate()
         mockTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            self?.addMockDataPoint()
+            Task { @MainActor in
+                self?.addMockDataPoint()
+            }
         }
     }
 
