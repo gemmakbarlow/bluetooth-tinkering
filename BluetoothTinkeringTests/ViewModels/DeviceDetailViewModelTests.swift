@@ -13,7 +13,7 @@ final class DeviceDetailViewModelTests: XCTestCase {
     }
 
     func test_connect_setsConnectingState() {
-        let peripheral = makePeripheral(name: "Device")
+        let peripheral = DiscoveredPeripheral.stub(name: "Device")
         sut.connect(to: peripheral)
         XCTAssertEqual(mock.connectionState, .connecting)
     }
@@ -43,28 +43,16 @@ final class DeviceDetailViewModelTests: XCTestCase {
 
     func test_connect_clearsError() {
         sut.error = "Previous error"
-        let peripheral = makePeripheral(name: "Device")
+        let peripheral = DiscoveredPeripheral.stub(name: "Device")
         sut.connect(to: peripheral)
         XCTAssertNil(sut.error)
     }
 
     func test_connectedPeripheral_reflectsManager() {
         XCTAssertNil(sut.connectedPeripheral)
-        let peripheral = makePeripheral(name: "Device")
+        let peripheral = DiscoveredPeripheral.stub(name: "Device")
         mock.simulateConnection(peripheral)
         XCTAssertNotNil(sut.connectedPeripheral)
     }
 
-    // MARK: - Helpers
-
-    private func makePeripheral(name: String?) -> DiscoveredPeripheral {
-        DiscoveredPeripheral(
-            id: UUID(),
-            peripheral: nil,
-            name: name,
-            rssi: -50,
-            advertisedServiceUUIDs: [],
-            lastSeen: Date()
-        )
-    }
 }

@@ -19,6 +19,7 @@ final class DashboardViewModel {
     var useMockData: Bool = true
     var lastReceivedDate: Date?
     var isDataStale: Bool = false
+    var hasDeclinedLiveData: Bool = false
 
     var isSimulated: Bool {
         useMockData || manager.connectedPeripheral == nil
@@ -40,7 +41,15 @@ final class DashboardViewModel {
         self.manager = manager
     }
 
+    nonisolated deinit {
+        MainActor.assumeIsolated {
+            mockTimer?.invalidate()
+            staleCheckTimer?.invalidate()
+        }
+    }
+
     func startMockData() {
+        stopStaleDataCheck()
         useMockData = true
         mockTimer?.invalidate()
         mockTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
@@ -58,6 +67,7 @@ final class DashboardViewModel {
     func switchToLiveData() {
         stopMockData()
         useMockData = false
+        hasDeclinedLiveData = false
         dataPoints = []
         startStaleDataCheck()
     }
@@ -89,9 +99,10 @@ final class DashboardViewModel {
     }
 
     func addLiveDataPoint(_ value: Double) {
-        lastReceivedDate = Date()
+        let now = Date()
+        lastReceivedDate = now
         isDataStale = false
-        let point = DataPoint(timestamp: Date(), value: value)
+        let point = DataPoint(timestamp: now, value: value)
         dataPoints.append(point)
         trimDataPoints()
     }

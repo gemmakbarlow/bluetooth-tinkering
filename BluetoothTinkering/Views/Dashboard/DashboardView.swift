@@ -3,7 +3,6 @@ import SwiftUI
 struct DashboardView: View {
     @Environment(DashboardViewModel.self) private var viewModel
     @State private var showLiveDataPrompt = false
-    @State private var hasDeclinedLiveData = false
 
     var body: some View {
         NavigationStack {
@@ -21,20 +20,21 @@ struct DashboardView: View {
                 }
             }
             .onChange(of: viewModel.shouldPromptForLiveData) { _, shouldPrompt in
-                if shouldPrompt && !hasDeclinedLiveData {
+                if shouldPrompt && !viewModel.hasDeclinedLiveData {
                     showLiveDataPrompt = true
                 }
             }
+            // Future Consideration: Unify alert patterns across views (DashboardView, DeviceDetailView,
+            // AccessorySetupView, PairedAccessoryRow) into a shared view modifier.
             .alert(
                 "Live Data Available",
                 isPresented: $showLiveDataPrompt
             ) {
                 Button("Switch to Live Data") {
                     viewModel.switchToLiveData()
-                    hasDeclinedLiveData = false
                 }
                 Button("Keep Simulated", role: .cancel) {
-                    hasDeclinedLiveData = true
+                    viewModel.hasDeclinedLiveData = true
                 }
             } message: {
                 Text("A Bluetooth device is connected. Would you like to switch to live data?")

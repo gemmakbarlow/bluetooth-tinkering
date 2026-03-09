@@ -25,7 +25,7 @@ final class BluetoothManager: NSObject, BluetoothManaging, @unchecked Sendable {
     }
 
     func startScanning() {
-        guard state == .poweredOn else { return }
+        guard state == .poweredOn, !isScanning else { return }
         discoveredPeripherals = []
         centralManager.scanForPeripherals(withServices: nil, options: [
             CBCentralManagerScanOptionAllowDuplicatesKey: true

@@ -18,14 +18,14 @@ final class DashboardViewModelTests: XCTestCase {
     }
 
     func test_isSimulated_falseWhenDeviceConnectedAndLiveMode() {
-        let peripheral = makePeripheral(name: "HR Monitor")
+        let peripheral = DiscoveredPeripheral.stub(name: "HR Monitor")
         mock.simulateConnection(peripheral)
         sut.useMockData = false
         XCTAssertFalse(sut.isSimulated)
     }
 
     func test_isSimulated_trueWhenMockModeForced() {
-        let peripheral = makePeripheral(name: "HR Monitor")
+        let peripheral = DiscoveredPeripheral.stub(name: "HR Monitor")
         mock.simulateConnection(peripheral)
         sut.useMockData = true
         XCTAssertTrue(sut.isSimulated)
@@ -43,7 +43,7 @@ final class DashboardViewModelTests: XCTestCase {
 
     func test_shouldPromptForLiveData_whenDeviceConnectsDuringMock() {
         sut.startMockData()
-        let peripheral = makePeripheral(name: "HR Monitor")
+        let peripheral = DiscoveredPeripheral.stub(name: "HR Monitor")
         mock.simulateConnection(peripheral)
         XCTAssertTrue(sut.shouldPromptForLiveData)
     }
@@ -74,16 +74,4 @@ final class DashboardViewModelTests: XCTestCase {
         sut.stopStaleDataCheck()
     }
 
-    // MARK: - Helpers
-
-    private func makePeripheral(name: String?) -> DiscoveredPeripheral {
-        DiscoveredPeripheral(
-            id: UUID(),
-            peripheral: nil,
-            name: name,
-            rssi: -50,
-            advertisedServiceUUIDs: [],
-            lastSeen: Date()
-        )
-    }
 }
