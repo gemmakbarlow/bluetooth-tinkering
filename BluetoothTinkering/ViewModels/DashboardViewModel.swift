@@ -12,11 +12,13 @@ struct DataPoint: Identifiable {
 final class DashboardViewModel {
     private let manager: any BluetoothManaging
     private var mockTimer: Timer?
+    private var staleCheckTimer: Timer?
     private let noDataTimeout: TimeInterval = 10
 
     var dataPoints: [DataPoint] = []
     var useMockData: Bool = true
     var lastReceivedDate: Date?
+    var isDataStale: Bool = false
 
     var isSimulated: Bool {
         useMockData || manager.connectedPeripheral == nil
@@ -57,10 +59,38 @@ final class DashboardViewModel {
         stopMockData()
         useMockData = false
         dataPoints = []
+        startStaleDataCheck()
+    }
+
+    func stopStaleDataCheck() {
+        staleCheckTimer?.invalidate()
+        staleCheckTimer = nil
+    }
+
+    private func startStaleDataCheck() {
+        staleCheckTimer?.invalidate()
+        staleCheckTimer = Timer.scheduledTimer(withTimeInterval: noDataTimeout, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.checkForStaleData()
+            }
+        }
+    }
+
+    private func checkForStaleData() {
+        guard !useMockData else {
+            isDataStale = false
+            return
+        }
+        if let lastDate = lastReceivedDate {
+            isDataStale = Date().timeIntervalSince(lastDate) > noDataTimeout
+        } else {
+            isDataStale = true
+        }
     }
 
     func addLiveDataPoint(_ value: Double) {
         lastReceivedDate = Date()
+        isDataStale = false
         let point = DataPoint(timestamp: Date(), value: value)
         dataPoints.append(point)
         trimDataPoints()

@@ -53,6 +53,27 @@ final class DashboardViewModelTests: XCTestCase {
         XCTAssertTrue(sut.showNoData)
     }
 
+    func test_addLiveDataPoint_clearsStaleFlag() {
+        sut.isDataStale = true
+        sut.addLiveDataPoint(72.0)
+        XCTAssertFalse(sut.isDataStale)
+    }
+
+    func test_addLiveDataPoint_updatesLastReceivedDate() {
+        XCTAssertNil(sut.lastReceivedDate)
+        sut.addLiveDataPoint(72.0)
+        XCTAssertNotNil(sut.lastReceivedDate)
+    }
+
+    func test_switchToLiveData_clearsDataPoints() {
+        sut.startMockData()
+        sut.dataPoints.append(DataPoint(timestamp: Date(), value: 50))
+        sut.switchToLiveData()
+        XCTAssertTrue(sut.dataPoints.isEmpty)
+        XCTAssertFalse(sut.useMockData)
+        sut.stopStaleDataCheck()
+    }
+
     // MARK: - Helpers
 
     private func makePeripheral(name: String?) -> DiscoveredPeripheral {

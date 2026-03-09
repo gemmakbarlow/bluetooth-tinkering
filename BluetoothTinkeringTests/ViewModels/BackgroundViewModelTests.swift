@@ -1,6 +1,7 @@
 import XCTest
 @testable import BluetoothTinkering
 
+@MainActor
 final class BackgroundViewModelTests: XCTestCase {
 
     var mock: MockBluetoothManager!
@@ -17,8 +18,8 @@ final class BackgroundViewModelTests: XCTestCase {
     }
 
     func test_events_areSortedNewestFirst() {
-        let old = BluetoothEvent(type: .scan, message: "Old")
-        let new = BluetoothEvent(type: .scan, message: "New")
+        let old = BluetoothEvent(type: .scan, message: "Old", timestamp: Date(timeIntervalSince1970: 1000))
+        let new = BluetoothEvent(type: .scan, message: "New", timestamp: Date(timeIntervalSince1970: 2000))
         mock.events = [old, new]
 
         XCTAssertEqual(sut.events.first?.message, "New")
@@ -37,6 +38,17 @@ final class BackgroundViewModelTests: XCTestCase {
 
         sut.isMonitoring = false
         XCTAssertFalse(sut.isMonitoring)
+    }
+
+    func test_isMonitoring_startsScanning() {
+        sut.isMonitoring = true
+        XCTAssertTrue(mock.isScanning)
+    }
+
+    func test_isMonitoring_stopsScanning() {
+        sut.isMonitoring = true
+        sut.isMonitoring = false
+        XCTAssertFalse(mock.isScanning)
     }
 
     func test_hasConnectedDevice_reflectsManager() {

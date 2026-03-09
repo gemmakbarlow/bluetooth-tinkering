@@ -93,6 +93,11 @@ final class AccessorySetupViewModel {
         accessories.removeAll { $0.id == accessory.id }
     }
 
+    func renameAccessory(_ accessory: PairedAccessory, to newName: String) {
+        guard let index = accessories.firstIndex(where: { $0.id == accessory.id }) else { return }
+        accessories[index] = PairedAccessory(id: accessory.id, displayName: newName, state: accessory.state)
+    }
+
     // MARK: - Internal for testing
 
     func handleAccessoryAdded(displayName: String) {

@@ -1,6 +1,7 @@
 import XCTest
 @testable import BluetoothTinkering
 
+@MainActor
 final class ScannerViewModelTests: XCTestCase {
 
     var mock: MockBluetoothManager!

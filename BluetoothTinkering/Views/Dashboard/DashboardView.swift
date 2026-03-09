@@ -2,6 +2,8 @@ import SwiftUI
 
 struct DashboardView: View {
     @Environment(DashboardViewModel.self) private var viewModel
+    @State private var showLiveDataPrompt = false
+    @State private var hasDeclinedLiveData = false
 
     var body: some View {
         NavigationStack {
@@ -18,14 +20,22 @@ struct DashboardView: View {
                     viewModel.startMockData()
                 }
             }
+            .onChange(of: viewModel.shouldPromptForLiveData) { _, shouldPrompt in
+                if shouldPrompt && !hasDeclinedLiveData {
+                    showLiveDataPrompt = true
+                }
+            }
             .alert(
                 "Live Data Available",
-                isPresented: .constant(viewModel.shouldPromptForLiveData)
+                isPresented: $showLiveDataPrompt
             ) {
                 Button("Switch to Live Data") {
                     viewModel.switchToLiveData()
+                    hasDeclinedLiveData = false
                 }
-                Button("Keep Simulated", role: .cancel) {}
+                Button("Keep Simulated", role: .cancel) {
+                    hasDeclinedLiveData = true
+                }
             } message: {
                 Text("A Bluetooth device is connected. Would you like to switch to live data?")
             }
@@ -41,6 +51,12 @@ struct DashboardView: View {
 
                 if viewModel.isSimulated {
                     SimulatedDataBadge()
+                }
+
+                if viewModel.isDataStale {
+                    Label("No data received recently", systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                        .font(.subheadline)
                 }
 
                 SimpleLineChart(dataPoints: viewModel.dataPoints)

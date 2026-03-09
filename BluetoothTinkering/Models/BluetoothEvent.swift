@@ -6,9 +6,9 @@ struct BluetoothEvent: Identifiable {
     let type: EventType
     let message: String
 
-    init(type: EventType, message: String) {
+    init(type: EventType, message: String, timestamp: Date = Date()) {
         self.id = UUID()
-        self.timestamp = Date()
+        self.timestamp = timestamp
         self.type = type
         self.message = message
     }

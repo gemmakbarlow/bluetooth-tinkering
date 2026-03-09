@@ -60,4 +60,13 @@ final class AccessorySetupViewModelTests: XCTestCase {
     func test_error_isNilInitially() {
         XCTAssertNil(sut.error)
     }
+
+    func test_renameAccessory_updatesDisplayName() {
+        sut.handleAccessoryAdded(displayName: "Old Name")
+        let accessory = sut.accessories.first!
+        sut.renameAccessory(accessory, to: "New Name")
+
+        XCTAssertEqual(sut.accessories.count, 1)
+        XCTAssertEqual(sut.accessories.first?.displayName, "New Name")
+    }
 }

@@ -34,6 +34,8 @@ struct AccessorySetupView: View {
                         ForEach(viewModel.accessories) { accessory in
                             PairedAccessoryRow(accessory: accessory) {
                                 viewModel.removeAccessory(accessory)
+                            } onRename: { newName in
+                                viewModel.renameAccessory(accessory, to: newName)
                             }
                         }
                     }

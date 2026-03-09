@@ -37,6 +37,24 @@ final class DeviceDetailViewModelTests: XCTestCase {
         XCTAssertTrue(sut.services.isEmpty)
     }
 
+    func test_error_initiallyNil() {
+        XCTAssertNil(sut.error)
+    }
+
+    func test_connect_clearsError() {
+        sut.error = "Previous error"
+        let peripheral = makePeripheral(name: "Device")
+        sut.connect(to: peripheral)
+        XCTAssertNil(sut.error)
+    }
+
+    func test_connectedPeripheral_reflectsManager() {
+        XCTAssertNil(sut.connectedPeripheral)
+        let peripheral = makePeripheral(name: "Device")
+        mock.simulateConnection(peripheral)
+        XCTAssertNotNil(sut.connectedPeripheral)
+    }
+
     // MARK: - Helpers
 
     private func makePeripheral(name: String?) -> DiscoveredPeripheral {

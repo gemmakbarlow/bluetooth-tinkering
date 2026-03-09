@@ -16,6 +16,12 @@ struct ScannerView: View {
                 }
             }
             .navigationTitle("Scanner")
+            .onAppear {
+                viewModel.startScanning()
+            }
+            .onDisappear {
+                viewModel.stopScanning()
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button {

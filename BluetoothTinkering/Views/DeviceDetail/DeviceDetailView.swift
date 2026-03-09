@@ -3,6 +3,7 @@ import SwiftUI
 struct DeviceDetailView: View {
     let peripheral: DiscoveredPeripheral
     @Environment(DeviceDetailViewModel.self) private var viewModel
+    @State private var showDisconnectionAlert = false
 
     var body: some View {
         List {
@@ -20,10 +21,21 @@ struct DeviceDetailView: View {
             }
         }
         .navigationTitle(peripheral.displayName)
-        .onChange(of: viewModel.connectionState) { _, newState in
+        .onChange(of: viewModel.connectionState) { oldState, newState in
             if newState == .connected {
                 viewModel.discoverServices()
             }
+            if oldState == .connected && newState == .disconnected {
+                showDisconnectionAlert = true
+            }
+        }
+        .alert("Device Disconnected", isPresented: $showDisconnectionAlert) {
+            Button("Reconnect") {
+                viewModel.connect(to: peripheral)
+            }
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("\(peripheral.displayName) disconnected unexpectedly.")
         }
     }
 

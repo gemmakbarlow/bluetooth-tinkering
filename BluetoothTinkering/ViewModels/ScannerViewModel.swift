@@ -6,6 +6,7 @@ enum SortOption {
     case name
 }
 
+@MainActor
 @Observable
 final class ScannerViewModel {
     private let manager: any BluetoothManaging
