@@ -3,7 +3,7 @@ import Foundation
 import Observation
 
 @Observable
-final class MockBluetoothManager: BluetoothManaging {
+final class MockBluetoothManager: BluetoothManaging, @unchecked Sendable {
     var state: BluetoothState = .poweredOn
     var discoveredPeripherals: [DiscoveredPeripheral] = []
     var connectedPeripheral: DiscoveredPeripheral? = nil
