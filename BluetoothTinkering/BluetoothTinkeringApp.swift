@@ -2,7 +2,7 @@ import SwiftUI
 
 @main
 struct BluetoothTinkeringApp: App {
-    @State private var bluetoothManager: BluetoothManager
+    @State private var appSettings = AppSettings()
     @State private var scannerViewModel: ScannerViewModel
     @State private var deviceDetailViewModel: DeviceDetailViewModel
     @State private var accessorySetupViewModel: AccessorySetupViewModel
@@ -10,8 +10,9 @@ struct BluetoothTinkeringApp: App {
     @State private var dashboardViewModel: DashboardViewModel
 
     init() {
-        let manager = BluetoothManager()
-        _bluetoothManager = State(initialValue: manager)
+        let settings = AppSettings()
+        _appSettings = State(initialValue: settings)
+        let manager = settings.activeManager
         _scannerViewModel = State(initialValue: ScannerViewModel(manager: manager))
         _deviceDetailViewModel = State(initialValue: DeviceDetailViewModel(manager: manager))
         _accessorySetupViewModel = State(initialValue: AccessorySetupViewModel())
@@ -27,7 +28,25 @@ struct BluetoothTinkeringApp: App {
                 .environment(accessorySetupViewModel)
                 .environment(backgroundViewModel)
                 .environment(dashboardViewModel)
-                .environment(bluetoothManager)
+                .environment(appSettings)
+                .onChange(of: appSettings.mode) { _, _ in
+                    rebuildViewModels()
+                }
         }
+    }
+
+    private func rebuildViewModels() {
+        // Clean up old ViewModels
+        backgroundViewModel.isMonitoring = false
+        dashboardViewModel.stopMockData()
+        dashboardViewModel.stopStaleDataCheck()
+        deviceDetailViewModel.disconnect()
+
+        // Create new ViewModels with active manager
+        let manager = appSettings.activeManager
+        scannerViewModel = ScannerViewModel(manager: manager)
+        deviceDetailViewModel = DeviceDetailViewModel(manager: manager)
+        backgroundViewModel = BackgroundViewModel(manager: manager)
+        dashboardViewModel = DashboardViewModel(manager: manager)
     }
 }

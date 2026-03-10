@@ -2,6 +2,7 @@ import SwiftUI
 
 struct BluetoothStateOverlay: View {
     let state: BluetoothState
+    var onEnableDemoMode: (() -> Void)? = nil
 
     private var shouldShow: Bool {
         switch state {
@@ -14,27 +15,19 @@ struct BluetoothStateOverlay: View {
 
     private var icon: String {
         switch state {
-        case .poweredOff:
-            return "bluetooth.slash"
-        case .unauthorized:
-            return "hand.raised.fill"
-        case .unsupported:
-            return "xmark.circle"
-        case .unknown, .poweredOn:
-            return ""
+        case .poweredOff: return "bluetooth.slash"
+        case .unauthorized: return "hand.raised.fill"
+        case .unsupported: return "xmark.circle"
+        case .unknown, .poweredOn: return ""
         }
     }
 
     private var title: String {
         switch state {
-        case .poweredOff:
-            return "Bluetooth is Off"
-        case .unauthorized:
-            return "Bluetooth Access Required"
-        case .unsupported:
-            return "Bluetooth Not Supported"
-        case .unknown, .poweredOn:
-            return ""
+        case .poweredOff: return "Bluetooth is Off"
+        case .unauthorized: return "Bluetooth Access Required"
+        case .unsupported: return "Bluetooth Not Supported"
+        case .unknown, .poweredOn: return ""
         }
     }
 
@@ -67,11 +60,24 @@ struct BluetoothStateOverlay: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
+
+                if state == .unsupported, let onEnableDemoMode {
+                    Button("Use Demo Mode") {
+                        onEnableDemoMode()
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.purple)
+                    .padding(.top, 8)
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(.systemBackground))
         }
     }
+}
+
+#Preview("Unsupported with Demo") {
+    BluetoothStateOverlay(state: .unsupported, onEnableDemoMode: {})
 }
 
 #Preview("Powered Off") {
@@ -82,14 +88,6 @@ struct BluetoothStateOverlay: View {
     BluetoothStateOverlay(state: .unauthorized)
 }
 
-#Preview("Unsupported") {
-    BluetoothStateOverlay(state: .unsupported)
-}
-
 #Preview("Powered On (Hidden)") {
     BluetoothStateOverlay(state: .poweredOn)
-}
-
-#Preview("Unknown (Hidden)") {
-    BluetoothStateOverlay(state: .unknown)
 }

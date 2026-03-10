@@ -26,4 +26,23 @@ final class AppSettingsTests: XCTestCase {
         sut.mode = .demo
         XCTAssertTrue(sut.isDemoMode)
     }
+
+    func test_enableDemoMode_setsMode() {
+        let sut = AppSettings()
+        sut.enableDemoMode()
+        XCTAssertEqual(sut.mode, .demo)
+    }
+
+    func test_disableDemoMode_setsMode() {
+        let sut = AppSettings()
+        sut.enableDemoMode()
+        sut.disableDemoMode()
+        XCTAssertEqual(sut.mode, .standard)
+    }
+
+    func test_bluetoothState_inDemoMode_isPoweredOn() {
+        let sut = AppSettings()
+        sut.enableDemoMode()
+        XCTAssertEqual(sut.bluetoothState, .poweredOn)
+    }
 }
